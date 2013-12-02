@@ -1,0 +1,35 @@
+{
+    "versionLabel": "1.0.0",
+    "uuid": "740ee8b0-c879-4d02-82dd-5b9b5c62a29b",
+    "appKeys": {},
+    "longName": "MacroDroid",
+    "versionCode": 1,
+    "capabilities": [
+        ""
+    ],
+    "shortName": "MacroDroid",
+    "companyName": "ArloSoft",
+    "watchapp": {
+        "watchface": false
+    },
+    "resources": {
+        "media": [
+            {
+                "menuIcon": true,
+                "type": "png",
+                "name": "IMAGE_MENU_ICON_BIG_WATCH",
+                "file": "images/md24.png"
+            },
+            {
+                "type": "font",
+                "name": "FONT_ROBOTO_CONDENSED_21",
+                "file": "fonts/Roboto-Condensed.ttf"
+            },
+            {
+                "type": "font",
+                "name": "FONT_ROBOTO_BOLD_SUBSET_49",
+                "file": "fonts/Roboto-Bold.ttf"
+            }
+        ]
+    }
+}
