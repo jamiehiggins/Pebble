@@ -3,6 +3,7 @@
 Window *window;
 TextLayer *text_date_layer;
 TextLayer *text_time_layer;
+TextLayer *text_info_layer;
 Layer *line_layer;
 
 // Identifiers for the different button types on the pebble watch
@@ -22,6 +23,10 @@ static const int MACRODROID_COMMAND_KEY = 999;
 static const int MACRODROID_COMMAND_VIBRATE = 2;
 static const int MACRODROID_COMMAND_LIGHT_ON = 3;
 
+void hide_info_handler(void* context) {
+	text_layer_set_text(text_info_layer, "");
+}
+
 ////////////////////////////
 // MESSAGE SENDING CALLBACKS
 ////////////////////////////
@@ -33,6 +38,9 @@ static const int MACRODROID_COMMAND_LIGHT_ON = 3;
 
  void out_failed_handler(DictionaryIterator *failed, AppMessageResult reason, void *context) {
    // outgoing message failed
+   text_layer_set_text(text_info_layer, "<Failed to send>");
+	 
+   AppTimer * timer = app_timer_register(2500, (AppTimerCallback) hide_info_handler, NULL);
  }
 
 
@@ -231,6 +239,12 @@ void handle_init(void) {
   text_layer_set_font(text_time_layer, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ROBOTO_BOLD_SUBSET_49)));
   layer_add_child(window_layer, text_layer_get_layer(text_time_layer));
 
+  text_info_layer = text_layer_create(GRect(7, 12, 144-7, 30));
+  text_layer_set_text_color(text_info_layer, GColorWhite);
+  text_layer_set_background_color(text_info_layer, GColorClear);
+  text_layer_set_font(text_info_layer, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ROBOTO_CONDENSED_21)));
+  layer_add_child(window_layer, text_layer_get_layer(text_info_layer));
+	
   GRect line_frame = GRect(8, 97, 139, 2);
   line_layer = layer_create(line_frame);
   layer_set_update_proc(line_layer, line_layer_update_callback);
