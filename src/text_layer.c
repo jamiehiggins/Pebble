@@ -6,6 +6,10 @@ TextLayer *text_time_layer;
 TextLayer *text_info_layer;
 Layer *line_layer;
 
+// The different watch->app messages we can send
+static const int MACRODROID_WATCH_TO_APP_BUTTON_PRESS = 1;
+static const int MACRODROID_WATCH_TO_APP_BATTERY_LEVEL = 2;
+
 // Identifiers for the different button types on the pebble watch
 static const int MACRODROID_BUTTON_ID_UP = 1;
 static const int MACRODROID_BUTTON_ID_MIDDLE = 2;
@@ -16,12 +20,14 @@ static const int MACRODROID_BUTTON_PRESS_SINGLE = 100;
 static const int MACRODROID_BUTTON_PRESS_LONG = 200;
 static const int MACRODROID_BUTTON_PRESS_MULTI = 300;
 
-// Identifiers for commands from Macrodroid
+// identifies a battery level message
+static const int MACRODROID_BATTERY_LEVEL_MESSAGE_ID = 1000;
 
+// Identifiers for commands from Macrodroid
 static const int MACRODROID_COMMAND_KEY = 999;
 
-static const int MACRODROID_COMMAND_VIBRATE = 2;
-static const int MACRODROID_COMMAND_LIGHT_ON = 3;
+static const int MACRODROID_COMMAND_VIBRATE = 3;
+static const int MACRODROID_COMMAND_LIGHT_ON = 4;
 
 void hide_info_handler(void* context) {
 	text_layer_set_text(text_info_layer, "");
@@ -70,7 +76,7 @@ void send_button_press(int macrodroidButtonId) {
 	DictionaryIterator *iter;
     app_message_outbox_begin(&iter);
 	  
-    Tuplet value = TupletInteger(1, macrodroidButtonId);
+    Tuplet value = TupletInteger(MACRODROID_WATCH_TO_APP_BUTTON_PRESS, macrodroidButtonId);
     dict_write_tuplet(iter, &value);
 	
     app_message_outbox_send();
@@ -157,6 +163,20 @@ void select_multi_click_handler(ClickRecognizerRef recognizer, void *context) {
 		break;
 	}
 }
+
+/////////////////////////////
+// BATTERY LEVEL HANDLER
+/////////////////////////////
+void battery_level_change(BatteryChargeState charge) {
+	DictionaryIterator *iter;
+    app_message_outbox_begin(&iter);
+	  
+    Tuplet value = TupletInteger(MACRODROID_WATCH_TO_APP_BATTERY_LEVEL, (int) charge.charge_percent);
+    dict_write_tuplet(iter, &value);
+	
+    app_message_outbox_send();
+}
+
 
 void config_provider(Window *window) {
     // single click / repeat-on-hold config:
@@ -269,6 +289,8 @@ int main(void) {
 	
 	window_set_click_config_provider(window, (ClickConfigProvider) config_provider);
 	
+	// Listen for battery updates
+	battery_state_service_subscribe(battery_level_change);	
 	
     app_event_loop();
   
