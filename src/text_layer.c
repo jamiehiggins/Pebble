@@ -3,7 +3,7 @@
 Window *window;
 TextLayer *text_date_layer;
 TextLayer *text_time_layer;
-TextLayer *text_info_layer;
+TextLayer *text_fail_layer;
 Layer *line_layer;
 
 // The different watch->app messages we can send
@@ -30,7 +30,7 @@ static const int MACRODROID_COMMAND_VIBRATE = 3;
 static const int MACRODROID_COMMAND_LIGHT_ON = 4;
 
 void hide_info_handler(void* context) {
-	text_layer_set_text(text_info_layer, "");
+	text_layer_set_text(text_fail_layer, "");
 }
 
 ////////////////////////////
@@ -44,7 +44,7 @@ void hide_info_handler(void* context) {
 
  void out_failed_handler(DictionaryIterator *failed, AppMessageResult reason, void *context) {
    // outgoing message failed
-   text_layer_set_text(text_info_layer, "<Failed to send>");
+   text_layer_set_text(text_fail_layer, "<Failed to send>");
 	 
    AppTimer * timer = app_timer_register(2500, (AppTimerCallback) hide_info_handler, NULL);
  }
@@ -183,7 +183,6 @@ void config_provider(Window *window) {
     window_single_click_subscribe(BUTTON_ID_UP, down_single_click_handler);
     window_single_click_subscribe(BUTTON_ID_DOWN, down_single_click_handler);
 	window_single_click_subscribe(BUTTON_ID_SELECT, down_single_click_handler);
-	
   //window_single_repeating_click_subscribe(BUTTON_ID_SELECT, 1000, select_single_click_handler);
   // multi click config:
   //window_multi_click_subscribe(BUTTON_ID_SELECT, 2, 10, 0, true, select_multi_click_handler);
@@ -244,7 +243,7 @@ void handle_init(void) {
   window_set_fullscreen(window, true);
   window_stack_push(window, true /* Animated */);
   window_set_background_color(window, GColorBlack);
-
+	
   Layer *window_layer = window_get_root_layer(window);
 
   text_date_layer = text_layer_create(GRect(8, 68, 144-8, 168-68));
@@ -259,11 +258,12 @@ void handle_init(void) {
   text_layer_set_font(text_time_layer, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ROBOTO_BOLD_SUBSET_49)));
   layer_add_child(window_layer, text_layer_get_layer(text_time_layer));
 
-  text_info_layer = text_layer_create(GRect(7, 12, 144-7, 30));
-  text_layer_set_text_color(text_info_layer, GColorWhite);
-  text_layer_set_background_color(text_info_layer, GColorClear);
-  text_layer_set_font(text_info_layer, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ROBOTO_CONDENSED_21)));
-  layer_add_child(window_layer, text_layer_get_layer(text_info_layer));
+  text_fail_layer = text_layer_create(GRect(30, 150, 144-30, 168-150));
+  text_layer_set_text_color(text_fail_layer, GColorWhite);
+  text_layer_set_background_color(text_fail_layer, GColorClear);
+  //text_layer_set_font(text_fail_layer, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ROBOTO_CONDENSED_21)));
+  text_layer_set_font(text_fail_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14));
+  layer_add_child(window_layer, text_layer_get_layer(text_fail_layer));
 	
   GRect line_frame = GRect(8, 97, 139, 2);
   line_layer = layer_create(line_frame);
