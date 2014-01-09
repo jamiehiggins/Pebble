@@ -1,10 +1,15 @@
 #include "pebble.h"
 	
 Window *window;
+TextLayer *text_info_layer;
 TextLayer *text_date_layer;
 TextLayer *text_time_layer;
-TextLayer *text_fail_layer;
+TextLayer *text_user_layer;
 Layer *line_layer;
+
+AppTimer * clear_user_text_timer;
+AppTimer * clear_info_timer;
+
 
 // The different watch->app messages we can send
 static const int MACRODROID_WATCH_TO_APP_BUTTON_PRESS = 1;
@@ -23,14 +28,142 @@ static const int MACRODROID_BUTTON_PRESS_MULTI = 300;
 // identifies a battery level message
 static const int MACRODROID_BATTERY_LEVEL_MESSAGE_ID = 1000;
 
+
+
 // Identifiers for commands from Macrodroid
 static const int MACRODROID_COMMAND_KEY = 999;
+static const int MACRODROID_VIBRATE_OPTION_KEY = 998;
+static const int MACRODROID_DISPLAY_TEXT_OPTION_KEY = 997;
+static const int MACRODROID_DISPLAY_TEXT_SIZE_OPTION_KEY = 996;
+static const int MACRODROID_DISPLAY_TEXT_DURATION_OPTION_KEY = 995;
+static const int MACRODROID_PEBBLE_TRIGGER_INFO_MESSAGE_KEY = 2001;
+
+// Font sizes for displaying text
+static const int DISPLAY_TEXT_FONT_SMALL = 0;
+static const int DISPLAY_TEXT_FONT_LARGE = 1;
 
 static const int MACRODROID_COMMAND_VIBRATE = 3;
 static const int MACRODROID_COMMAND_LIGHT_ON = 4;
+static const int MACRODROID_COMMAND_DISPLAY_TEXT = 5;
+
+static const int MACRODROID_COMMAND_DISPLAY_INFO = 20;
+
+static const int VIBRATE_BLIP = 0;
+static const int VIBRATE_SHORT_BUZZ = 1;
+static const int VIBRATE_LONG_BUZZ = 2;
+static const int VIBRATE_RAPID = 3;
+static const int VIBRATE_SLOW = 4;
+static const int VIBRATE_INCREASING = 5;
+static const int VIBRATE_CONSTANT = 6;
+static const int VIBRATE_DECREASING = 7;
+static const int VIBRATE_FINAL_FANTASY = 8;
+static const int VIBRATE_GAME_OVER = 9;
+static const int VIBRATE_STAR_WARS = 10;
+
 
 void hide_info_handler(void* context) {
-	text_layer_set_text(text_fail_layer, "");
+	text_layer_set_text(text_info_layer, "");
+	clear_info_timer = 0;
+}
+
+void hide_user_text_handler(void* context) {
+	text_layer_set_text(text_user_layer, "");
+	clear_user_text_timer = 0;
+}
+
+/////////////////////////////
+// PERFORM VIBRATION
+/////////////////////////////
+
+void perform_vibration(int vibrationPattern) {
+
+	if (vibrationPattern == VIBRATE_BLIP) {
+		uint32_t segments[] = { 100 };
+		const VibePattern pat = { 
+			.durations = segments, 
+			.num_segments = ARRAY_LENGTH(segments)
+		};
+		vibes_enqueue_custom_pattern(pat);
+	} else if (vibrationPattern == VIBRATE_SHORT_BUZZ) {
+		uint32_t segments[] = { 300 };
+		const VibePattern pat = { 
+			.durations = segments,
+			.num_segments = ARRAY_LENGTH(segments)
+		};
+		vibes_enqueue_custom_pattern(pat);
+	} else if (vibrationPattern ==VIBRATE_LONG_BUZZ) {
+		uint32_t segments[] = { 1000 };
+		const VibePattern pat = {
+			.durations = segments,
+			.num_segments = ARRAY_LENGTH(segments)
+		};
+		vibes_enqueue_custom_pattern(pat);
+	} else if (vibrationPattern == VIBRATE_RAPID) {
+		uint32_t segments[] = { 100, 50, 100, 50, 100, 50, 100, 50, 100, 50, 100, 50, 100 };
+		const VibePattern pat = {
+			.durations = segments,
+			.num_segments = ARRAY_LENGTH(segments)
+		};
+		vibes_enqueue_custom_pattern(pat);
+	} else if (vibrationPattern == VIBRATE_SLOW) {
+		uint32_t segments[] = { 600, 400, 600, 400, 600 };
+		const VibePattern pat = {
+			.durations = segments,
+			.num_segments = ARRAY_LENGTH(segments)
+		};
+		vibes_enqueue_custom_pattern(pat);
+	} else if (vibrationPattern == VIBRATE_INCREASING) {
+		uint32_t segments[] = { 150, 300, 300, 300, 450, 300, 600 };
+		const VibePattern pat = {
+			.durations = segments,
+			.num_segments = ARRAY_LENGTH(segments)
+		};
+		vibes_enqueue_custom_pattern(pat);
+	} else if (vibrationPattern == VIBRATE_CONSTANT) {
+		uint32_t segments[] = { 300, 500, 300, 500, 300, 500, 300, 500 };
+		const VibePattern pat = { 
+			.durations = segments,
+			.num_segments = ARRAY_LENGTH(segments)
+		};
+		vibes_enqueue_custom_pattern(pat);
+	} else if (vibrationPattern == VIBRATE_DECREASING) {
+		uint32_t segments[] = { 600, 300, 450, 300, 300, 300, 150 };
+		const VibePattern pat = {
+			.durations = segments,
+			.num_segments = ARRAY_LENGTH(segments)
+		};
+		vibes_enqueue_custom_pattern(pat);
+	} else if (vibrationPattern == VIBRATE_FINAL_FANTASY) {
+		uint32_t segments[] = { 50,100,50,100,50,100,400,100,300,100,350,50,200 ,100,100,50,600 };
+		const VibePattern pat = {
+			.durations = segments,
+			.num_segments = ARRAY_LENGTH(segments)
+		};
+		vibes_enqueue_custom_pattern(pat);
+	} else if (vibrationPattern == VIBRATE_GAME_OVER) {
+		uint32_t segments[] = { 100,200,100,100,100,100,100,200,100,500,100,225, 100 };
+		const VibePattern pat = {
+			.durations = segments,
+			.num_segments = ARRAY_LENGTH(segments)
+		};
+		vibes_enqueue_custom_pattern(pat);
+	} else if (vibrationPattern == VIBRATE_STAR_WARS) {
+		uint32_t segments[] = { 500,110,500,110,450,110,200,110,170,40,450,110,200,110,170,40,500 };
+		const VibePattern pat = {
+			.durations = segments,
+			.num_segments = ARRAY_LENGTH(segments)};
+		vibes_enqueue_custom_pattern(pat);
+	}
+}
+
+void show_info_message(char * message) {
+	// outgoing message failed
+   text_layer_set_text(text_info_layer, message);
+	 
+   if (clear_info_timer) {
+      app_timer_cancel(clear_info_timer);
+   } 
+   clear_info_timer = app_timer_register(2500, (AppTimerCallback) hide_info_handler, NULL);
 }
 
 ////////////////////////////
@@ -43,26 +176,53 @@ void hide_info_handler(void* context) {
 
 
  void out_failed_handler(DictionaryIterator *failed, AppMessageResult reason, void *context) {
-   // outgoing message failed
-   text_layer_set_text(text_fail_layer, "<Failed to send>");
-	 
-   AppTimer * timer = app_timer_register(2500, (AppTimerCallback) hide_info_handler, NULL);
+   show_info_message("<Failed to send>");
  }
 
 
 void in_received_handler(DictionaryIterator *received, void *context) {
 	// Check for fields you expect to receive
     Tuple * command_tuple = dict_find(received, MACRODROID_COMMAND_KEY);
-
+	
     // Act on the found fields received
     if (command_tuple) {
 		
-		int command = command_tuple->value->int32;
+		int command = command_tuple->value->uint8;
 		
 		if (command == MACRODROID_COMMAND_VIBRATE) {
-			vibes_long_pulse();	
+			Tuple * vibrate_pattern_tuple = dict_find(received, MACRODROID_VIBRATE_OPTION_KEY);
+			int vibratePattern = vibrate_pattern_tuple->value->uint8;
+			perform_vibration(vibratePattern);
 		} else if (command == MACRODROID_COMMAND_LIGHT_ON) {
 			light_enable_interaction();
+		} else if (command == MACRODROID_COMMAND_DISPLAY_TEXT) {
+
+			Tuple * text_tuple = dict_find(received, MACRODROID_DISPLAY_TEXT_OPTION_KEY);
+			char * text = text_tuple->value->cstring;
+			Tuple * size_tuple = dict_find(received, MACRODROID_DISPLAY_TEXT_SIZE_OPTION_KEY);
+			int size = size_tuple->value->uint8;
+			Tuple * duration_tuple = dict_find(received, MACRODROID_DISPLAY_TEXT_DURATION_OPTION_KEY);
+			int duration = duration_tuple->value->int32;
+			
+			if (size == DISPLAY_TEXT_FONT_SMALL) {
+				text_layer_set_font(text_user_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14));
+			} else {
+				text_layer_set_font(text_user_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18));
+			}
+			
+			text_layer_set_text(text_user_layer, text);
+			
+			if (clear_user_text_timer) {
+				app_timer_cancel(clear_user_text_timer);
+			}
+			
+			// Start a time to clear the text
+			clear_user_text_timer = app_timer_register(duration * 1000, (AppTimerCallback) hide_user_text_handler, NULL);
+		} else if (command == MACRODROID_COMMAND_DISPLAY_INFO) {
+
+			Tuple * text_tuple = dict_find(received, MACRODROID_PEBBLE_TRIGGER_INFO_MESSAGE_KEY);
+			char * text = text_tuple->value->cstring;
+			show_info_message(text);
 		}
      }
  }
@@ -243,9 +403,16 @@ void handle_init(void) {
   window_set_fullscreen(window, true);
   window_stack_push(window, true /* Animated */);
   window_set_background_color(window, GColorBlack);
-	
+  
   Layer *window_layer = window_get_root_layer(window);
-
+	
+  // The information layer for displaying 2 lines of user defined text
+  text_user_layer = text_layer_create(GRect(4, 4, 144-8, 60));
+  text_layer_set_text_color(text_user_layer, GColorWhite);
+  text_layer_set_background_color(text_user_layer, GColorClear);
+  text_layer_set_font(text_user_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14));
+  layer_add_child(window_layer, text_layer_get_layer(text_user_layer));
+	
   text_date_layer = text_layer_create(GRect(8, 68, 144-8, 168-68));
   text_layer_set_text_color(text_date_layer, GColorWhite);
   text_layer_set_background_color(text_date_layer, GColorClear);
@@ -258,12 +425,13 @@ void handle_init(void) {
   text_layer_set_font(text_time_layer, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ROBOTO_BOLD_SUBSET_49)));
   layer_add_child(window_layer, text_layer_get_layer(text_time_layer));
 
-  text_fail_layer = text_layer_create(GRect(30, 150, 144-30, 168-150));
-  text_layer_set_text_color(text_fail_layer, GColorWhite);
-  text_layer_set_background_color(text_fail_layer, GColorClear);
-  //text_layer_set_font(text_fail_layer, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ROBOTO_CONDENSED_21)));
-  text_layer_set_font(text_fail_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14));
-  layer_add_child(window_layer, text_layer_get_layer(text_fail_layer));
+  text_info_layer = text_layer_create(GRect(0, 148, 144, 168-18));
+  text_layer_set_text_color(text_info_layer, GColorWhite);
+  text_layer_set_background_color(text_info_layer, GColorClear);
+  text_layer_set_text_alignment(text_info_layer, GTextAlignmentCenter);
+  //text_layer_set_font(text_info_layer, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ROBOTO_CONDENSED_21)));
+  text_layer_set_font(text_info_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14));
+  layer_add_child(window_layer, text_layer_get_layer(text_info_layer));
 	
   GRect line_frame = GRect(8, 97, 139, 2);
   line_layer = layer_create(line_frame);
