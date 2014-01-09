@@ -159,7 +159,8 @@ void perform_vibration(int vibrationPattern) {
 void show_info_message(char * message) {
 	// outgoing message failed
    text_layer_set_text(text_info_layer, message);
-	 
+
+	
    if (clear_info_timer) {
       app_timer_cancel(clear_info_timer);
    } 
