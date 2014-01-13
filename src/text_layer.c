@@ -10,6 +10,8 @@ Layer *line_layer;
 AppTimer * clear_user_text_timer;
 AppTimer * clear_info_timer;
 
+char user_text_buffer[100];
+char info_text_buffer[20];
 
 // The different watch->app messages we can send
 static const int MACRODROID_WATCH_TO_APP_BUTTON_PRESS = 1;
@@ -198,7 +200,7 @@ void in_received_handler(DictionaryIterator *received, void *context) {
 		} else if (command == MACRODROID_COMMAND_LIGHT_ON) {
 			light_enable_interaction();
 		} else if (command == MACRODROID_COMMAND_DISPLAY_TEXT) {
-
+			
 			Tuple * text_tuple = dict_find(received, MACRODROID_DISPLAY_TEXT_OPTION_KEY);
 			char * text = text_tuple->value->cstring;
 			Tuple * size_tuple = dict_find(received, MACRODROID_DISPLAY_TEXT_SIZE_OPTION_KEY);
@@ -211,8 +213,10 @@ void in_received_handler(DictionaryIterator *received, void *context) {
 			} else {
 				text_layer_set_font(text_user_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18));
 			}
+
+			strncpy(user_text_buffer, text, 100);
 			
-			text_layer_set_text(text_user_layer, text);
+			text_layer_set_text(text_user_layer, user_text_buffer);
 			
 			if (clear_user_text_timer) {
 				app_timer_cancel(clear_user_text_timer);
@@ -224,7 +228,10 @@ void in_received_handler(DictionaryIterator *received, void *context) {
 
 			Tuple * text_tuple = dict_find(received, MACRODROID_PEBBLE_TRIGGER_INFO_MESSAGE_KEY);
 			char * text = text_tuple->value->cstring;
-			show_info_message(text);
+	
+			strncpy(info_text_buffer, text, 20);
+			
+			show_info_message(info_text_buffer);
 		} else if (command == MACRODROID_COMMAND_REFRESH_BATTERY) {
 			// Take a peek at the battery and forward the message
 			BatteryChargeState charge = battery_state_service_peek();
@@ -438,11 +445,10 @@ void handle_init(void) {
   text_layer_set_font(text_time_layer, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ROBOTO_BOLD_SUBSET_49)));
   layer_add_child(window_layer, text_layer_get_layer(text_time_layer));
 
-  text_info_layer = text_layer_create(GRect(0, 148, 144, 168-18));
+  text_info_layer = text_layer_create(GRect(0, 148, 144, 168-148));
   text_layer_set_text_color(text_info_layer, GColorWhite);
   text_layer_set_background_color(text_info_layer, GColorClear);
   text_layer_set_text_alignment(text_info_layer, GTextAlignmentCenter);
-  //text_layer_set_font(text_info_layer, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ROBOTO_CONDENSED_21)));
   text_layer_set_font(text_info_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14));
   layer_add_child(window_layer, text_layer_get_layer(text_info_layer));
 	
