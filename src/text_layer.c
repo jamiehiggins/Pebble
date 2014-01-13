@@ -45,6 +45,7 @@ static const int DISPLAY_TEXT_FONT_LARGE = 1;
 static const int MACRODROID_COMMAND_VIBRATE = 3;
 static const int MACRODROID_COMMAND_LIGHT_ON = 4;
 static const int MACRODROID_COMMAND_DISPLAY_TEXT = 5;
+static const int MACRODROID_COMMAND_REFRESH_BATTERY = 6;
 
 static const int MACRODROID_COMMAND_DISPLAY_INFO = 20;
 
@@ -224,6 +225,17 @@ void in_received_handler(DictionaryIterator *received, void *context) {
 			Tuple * text_tuple = dict_find(received, MACRODROID_PEBBLE_TRIGGER_INFO_MESSAGE_KEY);
 			char * text = text_tuple->value->cstring;
 			show_info_message(text);
+		} else if (command == MACRODROID_COMMAND_REFRESH_BATTERY) {
+			// Take a peek at the battery and forward the message
+			BatteryChargeState charge = battery_state_service_peek();
+
+			DictionaryIterator *iter;
+    		app_message_outbox_begin(&iter);
+	  
+    		Tuplet value = TupletInteger(MACRODROID_WATCH_TO_APP_BATTERY_LEVEL, (int) charge.charge_percent);
+    		dict_write_tuplet(iter, &value);
+	
+    		app_message_outbox_send();
 		}
      }
  }
